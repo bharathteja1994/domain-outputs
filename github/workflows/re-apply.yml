@@ -347,29 +347,63 @@ jobs:
         if: ${{ always() }}
         run: |
           cd ${{ inputs.tf_dir }}
-          VNET_ID=$(terraform output -raw vnet_id 2>/dev/null || true)
-          SUBNET_IDS=$(terraform output -json subnet_ids 2>/dev/null | jq -c . || true)
-          RELAY_EP=$(terraform output -raw vpc_relay_endpoint_id 2>/dev/null || true)
-          WS_EP=$(terraform output -raw vpc_workspace_endpoint_id 2>/dev/null || true)
-          INSTANCE_PROFILE_ID=$(terraform output -raw instance_profile_id 2>/dev/null || true)
-          CATALOG_IDS=$(terraform output -json catalog_ids 2>/dev/null | jq -c . || true)
-          SCHEMA_IDS=$(terraform output -json schema_ids 2>/dev/null | jq -c . || true)
-          EXT_LOC_IDS=$(terraform output -json external_location_ids 2>/dev/null | jq -c . || true)
-          VOLUME_IDS=$(terraform output -json volume_ids 2>/dev/null | jq -c . || true)
-          CLUSTER_IDS=$(terraform output -json compute_cluster_ids 2>/dev/null | jq -c . || true)
-          SQL_WH_IDS=$(terraform output -json sql_warehouse_ids 2>/dev/null | jq -c . || true)
-          SP_IDS=$(terraform output -json service_principal_ids 2>/dev/null | jq -c . || true)
-          if [ -n "$VNET_ID" ]; then echo "vnet_id=$VNET_ID" >> $GITHUB_OUTPUT; fi
-          if [ -n "$SUBNET_IDS" ]; then echo "subnet_ids=$SUBNET_IDS" >> $GITHUB_OUTPUT; fi
-          if [ -n "$RELAY_EP" ]; then echo "vpc_relay_endpoint_id=$RELAY_EP" >> $GITHUB_OUTPUT; fi
-          if [ -n "$WS_EP" ]; then echo "vpc_workspace_endpoint_id=$WS_EP" >> $GITHUB_OUTPUT; fi
-          if [ -n "$INSTANCE_PROFILE_ID" ]; then echo "instance_profile_id=$INSTANCE_PROFILE_ID" >> $GITHUB_OUTPUT; fi
-          if [ -n "$CATALOG_IDS" ] && [ "$CATALOG_IDS" != "null" ]; then echo "catalog_ids=$CATALOG_IDS" >> $GITHUB_OUTPUT; fi
-          if [ -n "$SCHEMA_IDS" ] && [ "$SCHEMA_IDS" != "null" ]; then echo "schema_ids=$SCHEMA_IDS" >> $GITHUB_OUTPUT; fi
-          if [ -n "$EXT_LOC_IDS" ] && [ "$EXT_LOC_IDS" != "null" ]; then echo "external_location_ids=$EXT_LOC_IDS" >> $GITHUB_OUTPUT; fi
-          if [ -n "$VOLUME_IDS" ] && [ "$VOLUME_IDS" != "null" ]; then echo "volume_ids=$VOLUME_IDS" >> $GITHUB_OUTPUT; fi
-          if [ -n "$CLUSTER_IDS" ] && [ "$CLUSTER_IDS" != "null" ]; then echo "compute_cluster_ids=$CLUSTER_IDS" >> $GITHUB_OUTPUT; fi
-          if [ -n "$SQL_WH_IDS" ] && [ "$SQL_WH_IDS" != "null" ]; then echo "sql_warehouse_ids=$SQL_WH_IDS" >> $GITHUB_OUTPUT; fi
-          if [ -n "$SP_IDS" ] && [ "$SP_IDS" != "null" ]; then echo "service_principal_ids=$SP_IDS" >> $GITHUB_OUTPUT; fi
+          echo "=== Collecting outputs for tf_dir: ${{ inputs.tf_dir }} ==="
+          
+          # List all available terraform outputs first
+          echo "Available terraform outputs:"
+          terraform output 2>/dev/null || echo "No outputs available"
+          
+          # Networking outputs
+          VNET_ID=$(terraform output -raw vnet_id 2>/dev/null || echo "")
+          SUBNET_IDS=$(terraform output -json subnet_ids 2>/dev/null | jq -c . 2>/dev/null || echo "null")
+          RELAY_EP=$(terraform output -raw vpc_relay_endpoint_id 2>/dev/null || echo "")
+          WS_EP=$(terraform output -raw vpc_workspace_endpoint_id 2>/dev/null || echo "")
+
+          # Identity outputs
+          INSTANCE_PROFILE_ID=$(terraform output -raw instance_profile_id 2>/dev/null || echo "")
+
+          # Catalogs outputs
+          CATALOG_IDS=$(terraform output -json catalog_ids 2>/dev/null | jq -c . 2>/dev/null || echo "null")
+          SCHEMA_IDS=$(terraform output -json schema_ids 2>/dev/null | jq -c . 2>/dev/null || echo "null")
+          EXT_LOC_IDS=$(terraform output -json external_location_ids 2>/dev/null | jq -c . 2>/dev/null || echo "null")
+          VOLUME_IDS=$(terraform output -json volume_ids 2>/dev/null | jq -c . 2>/dev/null || echo "null")
+
+          # Compute outputs
+          CLUSTER_IDS=$(terraform output -json compute_cluster_ids 2>/dev/null | jq -c . 2>/dev/null || echo "null")
+          SQL_WH_IDS=$(terraform output -json sql_warehouse_ids 2>/dev/null | jq -c . 2>/dev/null || echo "null")
+
+          # Workspace permissions outputs
+          SP_IDS=$(terraform output -json service_principal_ids 2>/dev/null | jq -c . 2>/dev/null || echo "null")
+
+          # Debug: Show what we collected
+          echo "=== Collected values ==="
+          echo "VNET_ID: '$VNET_ID'"
+          echo "SUBNET_IDS: '$SUBNET_IDS'"
+          echo "RELAY_EP: '$RELAY_EP'"
+          echo "WS_EP: '$WS_EP'"
+          echo "INSTANCE_PROFILE_ID: '$INSTANCE_PROFILE_ID'"
+          echo "CATALOG_IDS: '$CATALOG_IDS'"
+          echo "SCHEMA_IDS: '$SCHEMA_IDS'"
+          echo "EXT_LOC_IDS: '$EXT_LOC_IDS'"
+          echo "VOLUME_IDS: '$VOLUME_IDS'"
+          echo "CLUSTER_IDS: '$CLUSTER_IDS'"
+          echo "SQL_WH_IDS: '$SQL_WH_IDS'"
+          echo "SP_IDS: '$SP_IDS'"
+
+          # Always output all values, even if empty/null
+          echo "vnet_id=$VNET_ID" >> $GITHUB_OUTPUT
+          echo "subnet_ids=$SUBNET_IDS" >> $GITHUB_OUTPUT
+          echo "vpc_relay_endpoint_id=$RELAY_EP" >> $GITHUB_OUTPUT
+          echo "vpc_workspace_endpoint_id=$WS_EP" >> $GITHUB_OUTPUT
+          echo "instance_profile_id=$INSTANCE_PROFILE_ID" >> $GITHUB_OUTPUT
+          echo "catalog_ids=$CATALOG_IDS" >> $GITHUB_OUTPUT
+          echo "schema_ids=$SCHEMA_IDS" >> $GITHUB_OUTPUT
+          echo "external_location_ids=$EXT_LOC_IDS" >> $GITHUB_OUTPUT
+          echo "volume_ids=$VOLUME_IDS" >> $GITHUB_OUTPUT
+          echo "compute_cluster_ids=$CLUSTER_IDS" >> $GITHUB_OUTPUT
+          echo "sql_warehouse_ids=$SQL_WH_IDS" >> $GITHUB_OUTPUT
+          echo "service_principal_ids=$SP_IDS" >> $GITHUB_OUTPUT
+          
+          echo "=== Outputs written to GITHUB_OUTPUT ==="
 
 
