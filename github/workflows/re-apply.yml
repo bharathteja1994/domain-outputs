@@ -382,19 +382,19 @@ jobs:
     outputs:
       databricks_workspace_id: ${{ steps.tf-apply-workspace.outputs.databricks_workspace_id }}
       databricks_workspace_url: ${{ steps.tf-apply-workspace.outputs.databricks_workspace_url }}
-      # Collected outputs for all modules (workspace and non-workspace)
-      vnet_id: ${{ steps.collect-workspace-outputs.outputs.vnet_id || steps.collect-outputs.outputs.vnet_id }}
-      subnet_ids: ${{ steps.collect-workspace-outputs.outputs.subnet_ids || steps.collect-outputs.outputs.subnet_ids }}
-      vpc_relay_endpoint_id: ${{ steps.collect-workspace-outputs.outputs.vpc_relay_endpoint_id || steps.collect-outputs.outputs.vpc_relay_endpoint_id }}
-      vpc_workspace_endpoint_id: ${{ steps.collect-workspace-outputs.outputs.vpc_workspace_endpoint_id || steps.collect-outputs.outputs.vpc_workspace_endpoint_id }}
-      instance_profile_id: ${{ steps.collect-workspace-outputs.outputs.instance_profile_id || steps.collect-outputs.outputs.instance_profile_id }}
-      catalog_ids: ${{ steps.collect-workspace-outputs.outputs.catalog_ids || steps.collect-outputs.outputs.catalog_ids }}
-      schema_ids: ${{ steps.collect-workspace-outputs.outputs.schema_ids || steps.collect-outputs.outputs.schema_ids }}
-      external_location_ids: ${{ steps.collect-workspace-outputs.outputs.external_location_ids || steps.collect-outputs.outputs.external_location_ids }}
-      volume_ids: ${{ steps.collect-workspace-outputs.outputs.volume_ids || steps.collect-outputs.outputs.volume_ids }}
-      compute_cluster_ids: ${{ steps.collect-workspace-outputs.outputs.compute_cluster_ids || steps.collect-outputs.outputs.compute_cluster_ids }}
-      sql_warehouse_ids: ${{ steps.collect-workspace-outputs.outputs.sql_warehouse_ids || steps.collect-outputs.outputs.sql_warehouse_ids }}
-      service_principal_ids: ${{ steps.collect-workspace-outputs.outputs.service_principal_ids || steps.collect-outputs.outputs.service_principal_ids }}
+      # Collected outputs from apply steps
+      vnet_id: ${{ steps.tf-apply-azure-infra.outputs.vnet_id || steps.tf-apply-workspace.outputs.vnet_id || steps.tf-apply-non-workspace.outputs.vnet_id }}
+      subnet_ids: ${{ steps.tf-apply-azure-infra.outputs.subnet_ids || steps.tf-apply-workspace.outputs.subnet_ids || steps.tf-apply-non-workspace.outputs.subnet_ids }}
+      vpc_relay_endpoint_id: ${{ steps.tf-apply-azure-infra.outputs.vpc_relay_endpoint_id || steps.tf-apply-workspace.outputs.vpc_relay_endpoint_id || steps.tf-apply-non-workspace.outputs.vpc_relay_endpoint_id }}
+      vpc_workspace_endpoint_id: ${{ steps.tf-apply-azure-infra.outputs.vpc_workspace_endpoint_id || steps.tf-apply-workspace.outputs.vpc_workspace_endpoint_id || steps.tf-apply-non-workspace.outputs.vpc_workspace_endpoint_id }}
+      instance_profile_id: ${{ steps.tf-apply-azure-infra.outputs.instance_profile_id || steps.tf-apply-workspace.outputs.instance_profile_id || steps.tf-apply-non-workspace.outputs.instance_profile_id }}
+      catalog_ids: ${{ steps.tf-apply-azure-infra.outputs.catalog_ids || steps.tf-apply-workspace.outputs.catalog_ids || steps.tf-apply-non-workspace.outputs.catalog_ids }}
+      schema_ids: ${{ steps.tf-apply-azure-infra.outputs.schema_ids || steps.tf-apply-workspace.outputs.schema_ids || steps.tf-apply-non-workspace.outputs.schema_ids }}
+      external_location_ids: ${{ steps.tf-apply-azure-infra.outputs.external_location_ids || steps.tf-apply-workspace.outputs.external_location_ids || steps.tf-apply-non-workspace.outputs.external_location_ids }}
+      volume_ids: ${{ steps.tf-apply-azure-infra.outputs.volume_ids || steps.tf-apply-workspace.outputs.volume_ids || steps.tf-apply-non-workspace.outputs.volume_ids }}
+      compute_cluster_ids: ${{ steps.tf-apply-azure-infra.outputs.compute_cluster_ids || steps.tf-apply-workspace.outputs.compute_cluster_ids || steps.tf-apply-non-workspace.outputs.compute_cluster_ids }}
+      sql_warehouse_ids: ${{ steps.tf-apply-azure-infra.outputs.sql_warehouse_ids || steps.tf-apply-workspace.outputs.sql_warehouse_ids || steps.tf-apply-non-workspace.outputs.sql_warehouse_ids }}
+      service_principal_ids: ${{ steps.tf-apply-azure-infra.outputs.service_principal_ids || steps.tf-apply-workspace.outputs.service_principal_ids || steps.tf-apply-non-workspace.outputs.service_principal_ids }}
 
     steps:
       # Checkout the repository
@@ -470,6 +470,12 @@ jobs:
           else
             terraform apply -var-file=${{ inputs.tf_file }} -auto-approve
           fi
+          
+          # Collect networking outputs
+          echo "vnet_id=$(terraform output -raw vnet_id 2>/dev/null || echo "")" >> $GITHUB_OUTPUT
+          echo "subnet_ids=$(terraform output -json subnet_ids 2>/dev/null | jq -c . 2>/dev/null || echo "null")" >> $GITHUB_OUTPUT
+          echo "vpc_relay_endpoint_id=$(terraform output -raw vpc_relay_endpoint_id 2>/dev/null || echo "")" >> $GITHUB_OUTPUT
+          echo "vpc_workspace_endpoint_id=$(terraform output -raw vpc_workspace_endpoint_id 2>/dev/null || echo "")" >> $GITHUB_OUTPUT
 
       # Apply Terraform to deploy Databricks Workspace resources
       - name: Terraform Apply (Databricks Workspace)
@@ -490,6 +496,20 @@ jobs:
           if [ -n "$VPE" ]; then
             echo "vpc_workspace_endpoint_id=$VPE" >> $GITHUB_OUTPUT
           fi
+          
+          # Collect all workspace outputs
+          echo "vnet_id=$(terraform output -raw vnet_id 2>/dev/null || echo "")" >> $GITHUB_OUTPUT
+          echo "subnet_ids=$(terraform output -json subnet_ids 2>/dev/null | jq -c . 2>/dev/null || echo "null")" >> $GITHUB_OUTPUT
+          echo "vpc_relay_endpoint_id=$(terraform output -raw vpc_relay_endpoint_id 2>/dev/null || echo "")" >> $GITHUB_OUTPUT
+          echo "vpc_workspace_endpoint_id=$(terraform output -raw vpc_workspace_endpoint_id 2>/dev/null || echo "")" >> $GITHUB_OUTPUT
+          echo "instance_profile_id=$(terraform output -raw access_connector_id 2>/dev/null || echo "")" >> $GITHUB_OUTPUT
+          echo "catalog_ids=$(terraform output -json catalog_ids 2>/dev/null | jq -c . 2>/dev/null || echo "null")" >> $GITHUB_OUTPUT
+          echo "schema_ids=$(terraform output -json schema_ids 2>/dev/null | jq -c . 2>/dev/null || echo "null")" >> $GITHUB_OUTPUT
+          echo "external_location_ids=$(terraform output -json external_location_ids 2>/dev/null | jq -c . 2>/dev/null || echo "null")" >> $GITHUB_OUTPUT
+          echo "volume_ids=$(terraform output -json volume_ids 2>/dev/null | jq -c . 2>/dev/null || echo "null")" >> $GITHUB_OUTPUT
+          echo "compute_cluster_ids=$(terraform output -json compute_cluster_ids 2>/dev/null | jq -c . 2>/dev/null || echo "null")" >> $GITHUB_OUTPUT
+          echo "sql_warehouse_ids=$(terraform output -json sql_warehouse_ids 2>/dev/null | jq -c . 2>/dev/null || echo "null")" >> $GITHUB_OUTPUT
+          echo "service_principal_ids=$(terraform output -json service_principal_map 2>/dev/null | jq -c . 2>/dev/null || echo "null")" >> $GITHUB_OUTPUT
 
       # Collect outputs for workspace modules
       - name: Collect Workspace Terraform outputs
@@ -556,6 +576,7 @@ jobs:
 
       # Apply Terraform to deploy Databricks Non-Workspace resources
       - name: Terraform Apply (Databricks Non-Workspace)
+        id: tf-apply-non-workspace
         if: ${{ inputs.databricks_account_id == 'fe1630db-b2af-4ac1-a394-9f0e33096a57' && !endsWith(inputs.tf_dir, 'workspace') }}
         run: |
           cd ${{ inputs.tf_dir }}
@@ -572,6 +593,20 @@ jobs:
             -var 'databricks_client_id=${{ secrets.databricks_client_id }}' \
             -var 'databricks_client_secret=${{ secrets.databricks_client_secret }}'
           fi
+          
+          # Collect all non-workspace outputs
+          echo "vnet_id=$(terraform output -raw vnet_id 2>/dev/null || echo "")" >> $GITHUB_OUTPUT
+          echo "subnet_ids=$(terraform output -json subnet_ids 2>/dev/null | jq -c . 2>/dev/null || echo "null")" >> $GITHUB_OUTPUT
+          echo "vpc_relay_endpoint_id=$(terraform output -raw vpc_relay_endpoint_id 2>/dev/null || echo "")" >> $GITHUB_OUTPUT
+          echo "vpc_workspace_endpoint_id=$(terraform output -raw vpc_workspace_endpoint_id 2>/dev/null || echo "")" >> $GITHUB_OUTPUT
+          echo "instance_profile_id=$(terraform output -raw access_connector_id 2>/dev/null || echo "")" >> $GITHUB_OUTPUT
+          echo "catalog_ids=$(terraform output -json catalog_ids 2>/dev/null | jq -c . 2>/dev/null || echo "null")" >> $GITHUB_OUTPUT
+          echo "schema_ids=$(terraform output -json schema_ids 2>/dev/null | jq -c . 2>/dev/null || echo "null")" >> $GITHUB_OUTPUT
+          echo "external_location_ids=$(terraform output -json external_location_ids 2>/dev/null | jq -c . 2>/dev/null || echo "null")" >> $GITHUB_OUTPUT
+          echo "volume_ids=$(terraform output -json volume_ids 2>/dev/null | jq -c . 2>/dev/null || echo "null")" >> $GITHUB_OUTPUT
+          echo "compute_cluster_ids=$(terraform output -json compute_cluster_ids 2>/dev/null | jq -c . 2>/dev/null || echo "null")" >> $GITHUB_OUTPUT
+          echo "sql_warehouse_ids=$(terraform output -json sql_warehouse_ids 2>/dev/null | jq -c . 2>/dev/null || echo "null")" >> $GITHUB_OUTPUT
+          echo "service_principal_ids=$(terraform output -json service_principal_map 2>/dev/null | jq -c . 2>/dev/null || echo "null")" >> $GITHUB_OUTPUT
 
       - name: Collect Terraform outputs
         id: collect-outputs
