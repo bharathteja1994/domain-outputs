@@ -315,6 +315,8 @@ jobs:
           # List all available terraform outputs first
           echo "Available terraform outputs:"
           terraform output 2>/dev/null || echo "No outputs available"
+          echo "Raw terraform output command:"
+          terraform output
           
           # Networking outputs
           VNET_ID=$(terraform output -raw vnet_id 2>/dev/null || echo "")
@@ -323,7 +325,7 @@ jobs:
           WS_EP=$(terraform output -raw vpc_workspace_endpoint_id 2>/dev/null || echo "")
 
           # Identity outputs
-          INSTANCE_PROFILE_ID=$(terraform output -raw instance_profile_id 2>/dev/null || echo "")
+          INSTANCE_PROFILE_ID=$(terraform output -raw access_connector_id 2>/dev/null || echo "")
 
           # Catalogs outputs
           CATALOG_IDS=$(terraform output -json catalog_ids 2>/dev/null | jq -c . 2>/dev/null || echo "null")
@@ -336,7 +338,7 @@ jobs:
           SQL_WH_IDS=$(terraform output -json sql_warehouse_ids 2>/dev/null | jq -c . 2>/dev/null || echo "null")
 
           # Workspace permissions outputs
-          SP_IDS=$(terraform output -json service_principal_ids 2>/dev/null | jq -c . 2>/dev/null || echo "null")
+          SP_IDS=$(terraform output -json service_principal_map 2>/dev/null | jq -c . 2>/dev/null || echo "null")
 
           # Debug: Show what we collected
           echo "=== Collected AWS values ==="
@@ -494,12 +496,18 @@ jobs:
         id: collect-workspace-outputs
         if: ${{ inputs.databricks_account_id == 'fe1630db-b2af-4ac1-a394-9f0e33096a57' && endsWith(inputs.tf_dir, 'workspace') }}
         run: |
+          echo "=== WORKSPACE STEP STARTED: Collect Workspace Terraform outputs ==="
+          echo "Current directory: $(pwd)"
+          echo "Target tf_dir: ${{ inputs.tf_dir }}"
           cd ${{ inputs.tf_dir }}
+          echo "After cd, current directory: $(pwd)"
           echo "=== Collecting workspace outputs for tf_dir: ${{ inputs.tf_dir }} ==="
           
           # List all available terraform outputs first
           echo "Available terraform outputs:"
           terraform output 2>/dev/null || echo "No outputs available"
+          echo "Raw terraform output command:"
+          terraform output
           
           # Collect all outputs (workspace-specific and general)
           VNET_ID=$(terraform output -raw vnet_id 2>/dev/null || echo "")
@@ -569,12 +577,18 @@ jobs:
         id: collect-outputs
         if: ${{ always() }}
         run: |
+          echo "=== STEP STARTED: Collect Terraform outputs ==="
+          echo "Current directory: $(pwd)"
+          echo "Target tf_dir: ${{ inputs.tf_dir }}"
           cd ${{ inputs.tf_dir }}
+          echo "After cd, current directory: $(pwd)"
           echo "=== Collecting outputs for tf_dir: ${{ inputs.tf_dir }} ==="
           
           # List all available terraform outputs first
           echo "Available terraform outputs:"
           terraform output 2>/dev/null || echo "No outputs available"
+          echo "Raw terraform output command:"
+          terraform output
           
           # Networking outputs
           VNET_ID=$(terraform output -raw vnet_id 2>/dev/null || echo "")
@@ -583,7 +597,7 @@ jobs:
           WS_EP=$(terraform output -raw vpc_workspace_endpoint_id 2>/dev/null || echo "")
 
           # Identity outputs
-          INSTANCE_PROFILE_ID=$(terraform output -raw instance_profile_id 2>/dev/null || echo "")
+          INSTANCE_PROFILE_ID=$(terraform output -raw access_connector_id 2>/dev/null || echo "")
 
           # Catalogs outputs
           CATALOG_IDS=$(terraform output -json catalog_ids 2>/dev/null | jq -c . 2>/dev/null || echo "null")
@@ -596,7 +610,7 @@ jobs:
           SQL_WH_IDS=$(terraform output -json sql_warehouse_ids 2>/dev/null | jq -c . 2>/dev/null || echo "null")
 
           # Workspace permissions outputs
-          SP_IDS=$(terraform output -json service_principal_ids 2>/dev/null | jq -c . 2>/dev/null || echo "null")
+          SP_IDS=$(terraform output -json service_principal_map 2>/dev/null | jq -c . 2>/dev/null || echo "null")
 
           # Debug: Show what we collected
           echo "=== Collected values ==="
