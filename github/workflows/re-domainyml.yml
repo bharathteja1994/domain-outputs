@@ -124,5 +124,3 @@ jobs:
             --table-name dynamodb-rtlh-di-aws-syd-prd-01 \
             --item file://dynamodb-item.json \
             --region ${{ inputs.aws_region }}
-
-
