@@ -64,7 +64,7 @@ jobs:
     outputs:
       domain_config: ${{ steps.create-config.outputs.domain_config }}
     steps:
-      - name: Create Complete Inventory
+              - name: Create Complete Inventory
         id: create-config
         run: |
           echo "=== Received inputs for domain integration ==="
@@ -85,7 +85,8 @@ jobs:
           echo "subnet_ids: ${{ inputs.subnet_ids }}"
           echo "================================================"
           
-          cat > securable-inventory-${{ inputs.environment }}.json << EOF
+                  # Ensure JSON types are embedded correctly for arrays/maps (no extra quoting)
+                  cat > securable-inventory-${{ inputs.environment }}.json << EOF
           {
             "workspace_id": "${{ inputs.workspace_id }}",
             "workspace_url": "${{ inputs.workspace_url }}",
@@ -100,7 +101,7 @@ jobs:
             "sql_warehouse_ids": ${{ inputs.sql_warehouse_ids || 'null' }},
             "instance_profile_id": "${{ inputs.instance_profile_id }}",
             "vnet_id": "${{ inputs.vnet_id }}",
-            "subnet_ids": "${{ inputs.subnet_ids }}"
+            "subnet_ids": ${{ inputs.subnet_ids || 'null' }}
           }
           EOF
           
